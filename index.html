@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3박 4일 나고야 여행</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* 레이아웃: 왼쪽은 일차 탭 + 표, 오른쪽은 고정 경비 패널. 종이 수첩 느낌의 밝은 회녹색 바탕에 남색/주홍/이끼색 포인트 */
+  :root {
+    --bg: #F3F4F0;
+    --paper: #FFFFFF;
+    --ink: #1F2433;
+    --ink-soft: #5B6174;
+    --ink-faint: #A2A7B6;
+    --line: #DDE0DA;
+    --indigo: #2E3F6E;
+    --indigo-soft: #E6EAF4;
+    --vermilion: #C4452B;
+    --vermilion-soft: #F8E6E1;
+    --moss: #5F7D5A;
+    --moss-soft: #E4EDE2;
+    --shadow: 0 1px 2px rgba(31,36,51,.06), 0 8px 24px rgba(31,36,51,.06);
+    --font-display: "Gowun Batang", "Nanum Myeongjo", serif;
+    --font-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #15181F; --paper: #1E222B; --ink: #E9EAEE; --ink-soft: #A9AEBE; --ink-faint: #666C7D;
+      --line: #2E333F; --indigo: #9FB0E3; --indigo-soft: #262D45; --vermilion: #E8735B; --vermilion-soft: #3C2420;
+      --moss: #9DC494; --moss-soft: #22301F; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #15181F; --paper: #1E222B; --ink: #E9EAEE; --ink-soft: #A9AEBE; --ink-faint: #666C7D;
+    --line: #2E333F; --indigo: #9FB0E3; --indigo-soft: #262D45; --vermilion: #E8735B; --vermilion-soft: #3C2420;
+    --moss: #9DC494; --moss-soft: #22301F; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  }
+  * { box-sizing: border-box; }
+  html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--font-body); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1100px; margin: 0 auto;
+    padding-block: 28px 80px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+  header > div:first-child { min-width: 0; flex: 1 1 320px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.5vw, 44px); line-height: 1.15; margin: 0;
+    letter-spacing: -0.01em; text-wrap: balance;
+  }
+  h1[contenteditable="true"]:focus { outline: none; box-shadow: 0 2px 0 var(--indigo); }
+  .sub { color: var(--ink-soft); margin: 6px 0 0; font-size: 14px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button {
+    font: inherit; font-size: 13px; font-weight: 500;
+    color: var(--ink); background: var(--paper); border: 1px solid var(--line);
+    border-radius: 999px; padding: 7px 14px; cursor: pointer;
+  }
+  button:hover { border-color: var(--indigo); color: var(--indigo); }
+  button:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+  button.primary { background: var(--indigo); color: var(--paper); border-color: var(--indigo); }
+  button.primary:hover { opacity: .9; color: var(--paper); }
+  .save-state { font-size: 12px; color: var(--ink-faint); min-width: 60px; text-align: right; }
+  .save-state.err { color: var(--vermilion); }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  main { min-width: 0; }
+
+  /* 일차 탭 */
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .tab {
+    border-radius: 10px 10px 0 0; border: 1px solid var(--line); border-bottom: none;
+    background: transparent; color: var(--ink-soft); padding: 9px 18px; font-size: 14px;
+  }
+  .tab.active { background: var(--paper); color: var(--indigo); font-weight: 700; box-shadow: 0 -2px 0 var(--indigo) inset; }
+  .tab .mark { font-size: 11px; color: var(--vermilion); margin-left: 4px; font-weight: 700; }
+
+  .day { display: none; background: var(--paper); border: 1px solid var(--line); border-radius: 0 12px 12px 12px; box-shadow: var(--shadow); overflow: hidden; }
+  .day.active { display: block; }
+  .day-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; padding: 14px 20px 12px; border-bottom: 1px solid var(--line); }
+  .day-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin: 0; flex: 1 1 200px; min-width: 0; }
+  .day-title[contenteditable="true"]:focus { outline: none; box-shadow: 0 2px 0 var(--indigo); }
+
+  /* A안 / B안 */
+  .plans { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg button { border: none; border-radius: 0; padding: 6px 14px; background: transparent; color: var(--ink-soft); }
+  .seg button:hover { color: var(--indigo); }
+  .seg button.on { background: var(--indigo-soft); color: var(--indigo); font-weight: 700; }
+  .seg button.on.chosen { background: var(--vermilion-soft); color: var(--vermilion); }
+  .seg button .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--vermilion); margin-left: 6px; vertical-align: 2px; }
+  .chip { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--vermilion-soft); color: var(--vermilion); font-weight: 700; white-space: nowrap; }
+  .chip.alt { background: var(--indigo-soft); color: var(--indigo); font-weight: 500; }
+  .plan-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .plan-actions button { font-size: 12px; padding: 5px 12px; }
+
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th {
+    text-align: left; font-size: 12px; font-weight: 500; color: var(--ink-soft); letter-spacing: .02em;
+    padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--indigo-soft);
+  }
+  td { padding: 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td .cell { min-height: 40px; padding: 9px 12px; outline: none; white-space: pre-wrap; word-break: keep-all; }
+  td .cell:empty::before { content: attr(data-ph); color: var(--ink-faint); }
+  td .cell[contenteditable="true"]:focus { background: var(--indigo-soft); box-shadow: inset 2px 0 0 var(--indigo); }
+  td.time { width: 110px; }
+  td.time .cell { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: 13px; }
+  td.place .cell { font-weight: 500; }
+  td.cost { width: 110px; }
+  td.cost .cell { text-align: right; font-variant-numeric: tabular-nums; }
+  td.act { width: 86px; text-align: right; padding: 6px 8px 0 0; white-space: nowrap; }
+  .icon {
+    border: none; background: transparent; padding: 4px 5px; color: var(--ink-faint); font-size: 14px; line-height: 1; border-radius: 6px;
+    opacity: 0; transition: opacity .12s;
+  }
+  tr:hover .icon, tr:focus-within .icon { opacity: 1; }
+  .icon:hover { background: var(--indigo-soft); color: var(--indigo); }
+  .icon.del:hover { background: var(--vermilion-soft); color: var(--vermilion); }
+  @media (hover: none) { .icon { opacity: 1; } }
+  tr.empty td .cell { color: var(--ink-faint); }
+
+  .day-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; padding: 10px 14px 12px; border-top: 1px solid var(--line); }
+  .day-sum { font-size: 14px; color: var(--ink-soft); }
+  .day-sum b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .memo { padding: 14px 20px 18px; border-top: 1px dashed var(--line); }
+  .memo h3 { margin: 0 0 6px; font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+  .memo .cell { min-height: 56px; padding: 10px 12px; border-radius: 8px; background: var(--moss-soft); outline: none; white-space: pre-wrap; }
+  .memo .cell[contenteditable="true"]:focus { box-shadow: 0 0 0 2px var(--moss); }
+  .memo .cell:empty::before { content: attr(data-ph); color: var(--ink-faint); }
+
+  /* 경비 패널 */
+  aside { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); min-width: 0; }
+  @media (max-width: 860px) { aside { position: static; } }
+  .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 18px 20px; }
+  .panel h2 { font-family: var(--font-display); font-size: 18px; margin: 0 0 12px; }
+  .exp-row { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .exp-row span:first-child { color: var(--ink-soft); min-width: 0; }
+  .exp-row span:first-child small { color: var(--ink-faint); margin-left: 6px; font-size: 12px; }
+  .exp-row span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .exp-row.total { border-bottom: none; padding-top: 12px; font-size: 16px; font-weight: 700; }
+  .exp-row.total span:first-child { color: var(--ink); }
+  .exp-row.total span:last-child { color: var(--vermilion); }
+  .panel p.note { font-size: 12px; color: var(--ink-faint); margin: 12px 0 0; line-height: 1.5; }
+
+  /* 상태 카드 */
+  .state { background: var(--paper); border: 1px dashed var(--line); border-radius: 12px; padding: 36px 24px; text-align: center; color: var(--ink-soft); }
+  .state h2 { font-family: var(--font-display); font-size: 20px; margin: 0 0 8px; color: var(--ink); }
+  .state p { margin: 0 0 16px; font-size: 14px; }
+  .state code { background: var(--indigo-soft); color: var(--indigo); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .state .btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .state form { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+  .state input {
+    font: inherit; font-size: 15px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--bg); color: var(--ink); min-width: 0; width: 220px; max-width: 100%;
+  }
+  .state input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px var(--indigo-soft); }
+  .state .err { color: var(--vermilion); font-size: 13px; margin: 8px 0 0; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: all .2s;
+    display: flex; gap: 12px; align-items: center; max-width: calc(100vw - 32px);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .toast button { background: transparent; color: var(--bg); border-color: rgba(255,255,255,.4); padding: 3px 10px; font-size: 12px; }
+
+  body.ro .act, body.ro .day-foot button, body.ro .plan-actions { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { .toast, .icon { transition: none; } }
+  @media print {
+    body { background: #fff; }
+    .tools, .tabs, td.act, .day-foot button, .plan-actions, .sub { display: none !important; }
+    .day { display: block !important; border-radius: 0; box-shadow: none; margin-bottom: 20px; page-break-inside: avoid; }
+    .grid { grid-template-columns: 1fr; }
+    aside { position: static; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 id="title" spellcheck="false">3박 4일 나고야 여행</h1>
+      <p class="sub" id="sub">일정을 불러오는 중이에요…</p>
+    </div>
+    <div class="tools">
+      <span class="save-state" id="saveState"></span>
+      <button type="button" onclick="window.print()">인쇄</button>
+      <button type="button" id="leaveBtn" onclick="leave()" hidden>암호 다시 입력</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <main>
+      <div class="tabs" id="tabs"></div>
+      <div id="days"></div>
+    </main>
+    <aside>
+      <div class="panel">
+        <h2>경비</h2>
+        <div id="expenses"></div>
+        <p class="note">각 일차에서 ‘확정’한 안의 비용을 더해요. 비용 칸에는 숫자만 적으면 돼요 (예: 12000).</p>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<!-- Firebase SDK (compat 빌드) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<script>
+/* =====================================================================
+   1) Firebase 설정  ← 여기만 고치면 돼요 (README.md 3단계)
+   Firebase 콘솔 > 프로젝트 설정 > 내 앱 > SDK 설정 및 구성 에서 복사한
+   firebaseConfig 의 내용을 아래 중괄호 안에 그대로 붙여넣으세요.
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDaCmQ_0WEEo92qikpM1jZLICX0TNQotSI",
+  authDomain: "trip-nagoya-3e3ed.firebaseapp.com",
+  projectId: "trip-nagoya-3e3ed",
+  storageBucket: "trip-nagoya-3e3ed.firebasestorage.app",
+  messagingSenderId: "525272660766",
+  appId: "1:525272660766:web:d7acd4adfc7770809fa70f"
+};
+
+/* =====================================================================
+   2) 처음 한 번만 쓰는 기본 일정 (저장소가 비어 있을 때 '원래 일정으로 시작' 버튼이 넣어요)
+   ===================================================================== */
+const SLOTS = ['06:00-07:00','07:00-08:00','08:00-09:00','09:00-10:00','10:00-11:00','11:00-12:00','12:00-13:00','13:00-14:00','14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00','18:00-19:00','19:00-20:00','20:00-21:00','21:00-22:00','22:00-23:00','23:00-24:00','24:00-01:00'];
+const PLANS = ['A', 'B'];
+const DEFAULT_TITLE = '3박 4일 나고야 여행';
+const blank = t => ({ time: t, place: '', how: '', plan: '', cost: '' });
+const blankPlan = () => ({ rows: SLOTS.map(blank), memo: '' });
+const SEED = [
+  { label: '1일차 · 12월 10일 목', memo: '먹을 것: 아침 카페 토스트 / 장어덮밥 / 미소돈카츠\n챙길 것: 커피돈',
+    rows: [
+      { time: '07:00', place: '기상', how: '', plan: '', cost: '' },
+      { time: '08:00-09:00', place: '서울 김포공항 도착', how: '605번 신길1동새마을금고', plan: '', cost: '' },
+      { time: '11:10', place: '서울 김포공항에서 출발', how: '피치 항공 에어버스 A320', plan: '', cost: '' },
+      { time: '11:10-13:00', place: '나고야 주부 공항 제1터미널 도착', how: '', plan: '', cost: '' },
+      { time: '13:00-13:40', place: '입국 심사 및 이심 등록', how: '', plan: '', cost: '' },
+      { time: '13:40-16:40', place: '나고야역으로 이동', how: '', plan: '', cost: '' },
+      { time: '12:00-13:00', place: '나고야역에서 표 구매', how: '', plan: '', cost: '' },
+      { time: '13:00-14:00', place: '게로 온천 마을 출발', how: '히다 특급 열차', plan: '', cost: '' },
+      { time: '14:00-15:00', place: '게로 온천 체크인', how: '', plan: '', cost: '' },
+      ...SLOTS.slice(9).map(blank)
+    ] },
+  { label: '2일차 · 12월 11일 금', memo: '미소카츠 저녁\n점심: 투어 가는 장소에서 맛집 찾기 (다카야마)',
+    rows: SLOTS.map(t => t === '09:00-10:00' ? { ...blank(t), place: '다카야마 도착' } : blank(t)) },
+  { label: '3일차 · 12월 12일 토', memo: '아침 토스트 / 점심 지브리파크 / 저녁 시내 장어덮밥', rows: SLOTS.map(blank) },
+  { label: '4일차 · 12월 13일 일', memo: '', rows: SLOTS.map(blank) }
+];
+
+/* =====================================================================
+   3) 아래는 건드릴 필요 없어요
+   ===================================================================== */
+let db = null;
+let code = '';                // 공유 암호 (Firestore 경로 trips/<암호>/ 에 쓰임)
+let unsubs = [];              // 현재 구독 해제 함수들
+let canWrite = null;          // null(모름) / false(쓰기 거부됨)
+let status = 'loading';       // loading | noconfig | nocode | badcode | denied | offline | ready
+const CODE_KEY = 'nagoya-code';
+const path = p => 'trips/' + code + '/' + p;
+let data = { title: DEFAULT_TITLE, days: [] };
+let current = 0;              // 보고 있는 일차
+let view = {};                // dayId -> 'A' | 'B' (이 브라우저에서만 기억)
+const dirty = new Set();      // 아직 저장 안 된 일차 id
+const timers = {};
+const chains = {};
+let metaTimer = null, metaChain = Promise.resolve();
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num = v => { const n = parseFloat(String(v).replace(/[^\d.-]/g, '')); return isNaN(n) ? 0 : n; };
+const fmt = n => n.toLocaleString('ko-KR');
+const planSum = p => p.rows.reduce((a, r) => a + num(r.cost), 0);
+const planEmpty = p => !p.memo && p.rows.every(r => !r.place && !r.how && !r.plan && !r.cost);
+const viewOf = d => view[d.id] || d.chosen || 'A';
+const editable = () => canWrite === false ? 'false' : 'true';
+
+try { view = JSON.parse(localStorage.getItem('nagoya-view') || '{}') || {}; } catch (e) { view = {}; }
+function rememberView() { try { localStorage.setItem('nagoya-view', JSON.stringify(view)); } catch (e) {} }
+
+function normalize(r) {
+  const plans = {};
+  for (const p of PLANS) {
+    const src = (r.plans && r.plans[p]) || {};
+    plans[p] = { rows: Array.isArray(src.rows) ? src.rows.map(x => ({ ...blank(''), ...x })) : SLOTS.map(blank), memo: src.memo || '' };
+  }
+  return { id: r.id, idx: typeof r.idx === 'number' ? r.idx : 0, label: r.label || '', chosen: PLANS.includes(r.chosen) ? r.chosen : 'A', plans };
+}
+
+/* ---------- 렌더 ---------- */
+function cell(di, p, ri, key, ph) {
+  const v = data.days[di].plans[p].rows[ri][key];
+  return `<div class="cell" contenteditable="${editable()}" spellcheck="false" data-ph="${ph}" data-d="${di}" data-p="${p}" data-r="${ri}" data-k="${key}">${esc(v)}</div>`;
+}
+
+function dayHtml(d, di) {
+  const p = viewOf(d), plan = d.plans[p], isChosen = d.chosen === p;
+  const other = p === 'A' ? 'B' : 'A';
+  return `
+    <section class="day ${di === current ? 'active' : ''}" data-day="${di}">
+      <div class="day-head">
+        <h2 class="day-title" contenteditable="${editable()}" spellcheck="false" data-label="${di}">${esc(d.label)}</h2>
+        <div class="plans">
+          <div class="seg" role="tablist">
+            ${PLANS.map(q => `<button type="button" role="tab" aria-selected="${q === p}" class="${q === p ? 'on' : ''} ${d.chosen === q ? 'chosen' : ''}" onclick="setView(${di},'${q}')">${q}안${d.chosen === q ? '<span class="dot" title="확정"></span>' : ''}</button>`).join('')}
+          </div>
+          ${isChosen ? '<span class="chip">확정된 안</span>' : '<span class="chip alt">대안</span>'}
+          <div class="plan-actions">
+            ${isChosen ? '' : `<button type="button" onclick="choosePlan(${di},'${p}')">이 안으로 확정</button>`}
+            ${planEmpty(plan) && !planEmpty(d.plans[other]) ? `<button type="button" onclick="copyPlan(${di},'${other}','${p}')">${other}안 내용 복사해오기</button>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>시간</th><th>장소</th><th>가는 법</th><th>일정</th><th>비용</th><th></th></tr></thead>
+          <tbody>
+            ${plan.rows.map((r, ri) => `
+              <tr class="${(r.place || r.how || r.plan || r.cost) ? '' : 'empty'}">
+                <td class="time">${cell(di, p, ri, 'time', '시간')}</td>
+                <td class="place">${cell(di, p, ri, 'place', '장소')}</td>
+                <td class="how">${cell(di, p, ri, 'how', '교통·이동')}</td>
+                <td class="plan">${cell(di, p, ri, 'plan', '메모')}</td>
+                <td class="cost">${cell(di, p, ri, 'cost', '0')}</td>
+                <td class="act">
+                  <button type="button" class="icon" title="위로" onclick="moveRow(${di},'${p}',${ri},-1)">↑</button>
+                  <button type="button" class="icon" title="아래로" onclick="moveRow(${di},'${p}',${ri},1)">↓</button>
+                  <button type="button" class="icon" title="아래에 행 추가" onclick="addRow(${di},'${p}',${ri + 1})">＋</button>
+                  <button type="button" class="icon del" title="삭제" onclick="delRow(${di},'${p}',${ri})">✕</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="day-foot">
+        <button type="button" onclick="addRow(${di},'${p}')">＋ 행 추가</button>
+        <div class="day-sum">${p}안 경비 <b>${fmt(planSum(plan))}</b></div>
+      </div>
+      <div class="memo">
+        <h3>메모 · 먹을 것 (${p}안)</h3>
+        <div class="cell" contenteditable="${editable()}" spellcheck="false" data-ph="가고 싶은 식당, 챙길 것 등" data-memo="${di}" data-p="${p}">${esc(plan.memo)}</div>
+      </div>
+    </section>`;
+}
+
+function codeForm(msg) {
+  return `<div class="state"><h2>공유 암호를 입력해주세요</h2><p>일정표를 만든 사람에게 받은 암호예요. 한 번 입력하면 이 브라우저에서는 다시 묻지 않아요.</p>
+    <form onsubmit="event.preventDefault(); enter(this.code.value)">
+      <input type="password" name="code" id="codeInput" placeholder="공유 암호" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button type="submit" class="primary">들어가기</button>
+    </form>${msg ? `<p class="err">${esc(msg)}</p>` : ''}</div>`;
+}
+function stateCard() {
+  if (status === 'noconfig') return `<div class="state"><h2>Firebase 설정이 아직 없어요</h2><p><code>index.html</code> 맨 아래 <code>firebaseConfig</code> 칸에 Firebase 콘솔에서 복사한 값을 붙여넣어주세요. 순서는 README.md 3단계에 있어요.</p></div>`;
+  if (status === 'nocode') return codeForm('');
+  if (status === 'badcode') return codeForm('암호가 맞지 않아요. 다시 확인해주세요. (만든 사람이라면 Firestore 규칙의 암호와 같은지 확인하세요.)');
+  if (status === 'denied') return `<div class="state"><h2>저장소에 접근할 수 없어요</h2><p>Firestore 규칙이 아직 게시되지 않은 것 같아요. README.md 2단계의 규칙을 붙여넣고 ‘게시’를 눌러주세요.</p></div>`;
+  if (status === 'offline') return `<div class="state"><h2>저장소에 연결하지 못했어요</h2><p>인터넷 연결을 확인하고 새로고침해주세요.</p></div>`;
+  if (status === 'ready') return `<div class="state"><h2>아직 일정표가 비어 있어요</h2><p>처음이라면 원래 적어둔 일정으로 시작하거나, 빈 표로 시작할 수 있어요. 각 일차마다 A안과 B안을 따로 적을 수 있어요.</p><div class="btns"><button type="button" class="primary" onclick="createDays(true)">원래 일정으로 시작하기</button><button type="button" onclick="createDays(false)">빈 4일 표로 시작하기</button></div></div>`;
+  return `<div class="state"><h2>불러오는 중…</h2><p>잠시만 기다려주세요.</p></div>`;
+}
+
+function render() {
+  const focus = captureFocus();
+  const t = document.getElementById('title');
+  if (t.textContent !== data.title) t.textContent = data.title;
+  t.contentEditable = editable();
+  document.title = data.title || DEFAULT_TITLE;
+  document.body.classList.toggle('ro', canWrite === false);
+
+  const sub = document.getElementById('sub');
+  if (status === 'loading') sub.textContent = '일정을 불러오는 중이에요…';
+  else if (status === 'nocode' || status === 'badcode') sub.textContent = '암호를 아는 사람만 보고 고칠 수 있어요.';
+  else if (status !== 'ready') sub.textContent = '설정을 마치면 여기서 바로 일정을 고칠 수 있어요.';
+  else if (canWrite === false) sub.textContent = '지금은 보기만 할 수 있어요. 저장이 거부됐어요 (Firestore 규칙 확인).';
+  else sub.textContent = '칸을 누르면 바로 고칠 수 있어요. 바뀐 내용은 암호를 아는 모든 사람에게 자동으로 반영돼요.';
+  document.getElementById('leaveBtn').hidden = !(status === 'ready' || status === 'denied');
+
+  const tabs = document.getElementById('tabs'), days = document.getElementById('days');
+  if (status !== 'ready' || data.days.length === 0) {
+    tabs.innerHTML = '';
+    days.innerHTML = stateCard();
+    document.getElementById('expenses').innerHTML = '';
+    const inp = document.getElementById('codeInput'); if (inp) inp.focus();
+    return;
+  }
+  if (current >= data.days.length) current = data.days.length - 1;
+  tabs.innerHTML = data.days.map((d, i) =>
+    `<button type="button" class="tab ${i === current ? 'active' : ''}" onclick="goDay(${i})">${esc(d.label.split('·')[0].trim() || (i + 1) + '일차')}<span class="mark">${d.chosen}</span></button>`
+  ).join('');
+  days.innerHTML = data.days.map(dayHtml).join('');
+  renderExpenses();
+  restoreFocus(focus);
+}
+
+function renderDay(di) {
+  const focus = captureFocus();
+  const el = document.querySelector(`.day[data-day="${di}"]`);
+  if (!el) { render(); return; }
+  el.outerHTML = dayHtml(data.days[di], di);
+  const tab = document.querySelectorAll('.tab')[di];
+  if (tab) tab.querySelector('.mark').textContent = data.days[di].chosen;
+  renderExpenses();
+  restoreFocus(focus);
+}
+
+function renderExpenses() {
+  const total = data.days.reduce((a, d) => a + planSum(d.plans[d.chosen]), 0);
+  document.getElementById('expenses').innerHTML =
+    data.days.map(d => `<div class="exp-row"><span>${esc(d.label.split('·')[0].trim())}<small>${d.chosen}안</small></span><span>${fmt(planSum(d.plans[d.chosen]))}</span></div>`).join('') +
+    `<div class="exp-row total"><span>총합</span><span>${fmt(total)}</span></div>`;
+  document.querySelectorAll('.day').forEach(el => {
+    const d = data.days[+el.dataset.day]; if (!d) return;
+    const b = el.querySelector('.day-sum b'); if (b) b.textContent = fmt(planSum(d.plans[viewOf(d)]));
+  });
+}
+
+/* 재렌더 전후로 커서 위치 유지 */
+function selectorOf(el) {
+  if (el.id === 'title') return '#title';
+  const ds = el.dataset;
+  if (ds.label !== undefined) return `[data-label="${ds.label}"]`;
+  if (ds.memo !== undefined) return `[data-memo="${ds.memo}"][data-p="${ds.p}"]`;
+  if (ds.k) return `[data-d="${ds.d}"][data-p="${ds.p}"][data-r="${ds.r}"][data-k="${ds.k}"]`;
+  return null;
+}
+function captureFocus() {
+  const el = document.activeElement;
+  if (!el || !el.isContentEditable) return null;
+  const sel = selectorOf(el); if (!sel) return null;
+  let off = 0;
+  const s = getSelection();
+  if (s && s.rangeCount) { const r = s.getRangeAt(0).cloneRange(); r.selectNodeContents(el); r.setEnd(s.getRangeAt(0).endContainer, s.getRangeAt(0).endOffset); off = r.toString().length; }
+  return { sel, off };
+}
+function restoreFocus(f) {
+  if (!f) return;
+  const el = document.querySelector(f.sel); if (!el) return;
+  el.focus();
+  const s = getSelection(), r = document.createRange();
+  let left = f.off;
+  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
+  while ((n = w.nextNode())) {
+    if (left <= n.length) { r.setStart(n, left); r.collapse(true); s.removeAllRanges(); s.addRange(r); return; }
+    left -= n.length;
+  }
+  r.selectNodeContents(el); r.collapse(false); s.removeAllRanges(); s.addRange(r);
+}
+
+/* ---------- 저장 ---------- */
+function setState(msg, err) {
+  const st = document.getElementById('saveState');
+  st.textContent = msg; st.classList.toggle('err', !!err);
+}
+function onWriteError(e) {
+  setState('저장 실패', true);
+  if (e && e.code === 'permission-denied') { canWrite = false; render(); toast('저장이 거부됐어요. Firestore 규칙을 확인해주세요.'); }
+  else if (e && e.code === 'resource-exhausted') toast('오늘 저장 한도를 넘었어요. 잠시 후 다시 시도해주세요.');
+}
+
+function queueSave(di) {
+  const d = data.days[di]; if (!d) return;
+  dirty.add(d.id);
+  setState('저장 중…');
+  clearTimeout(timers[d.id]);
+  timers[d.id] = setTimeout(() => { delete timers[d.id]; flush(d); }, 600);
+}
+function flush(d) {
+  if (!db) { setState('저장 불가', true); return; }
+  const body = { idx: d.idx, label: d.label, chosen: d.chosen, plans: JSON.parse(JSON.stringify(d.plans)) };
+  chains[d.id] = (chains[d.id] || Promise.resolve())
+    .then(() => db.doc(path('days/' + d.id)).set(body))
+    .then(() => { if (!timers[d.id]) dirty.delete(d.id); if (dirty.size === 0) setState('저장됨'); })
+    .catch(onWriteError);
+}
+function queueMeta() {
+  setState('저장 중…');
+  clearTimeout(metaTimer);
+  metaTimer = setTimeout(() => {
+    metaTimer = null;
+    if (!db) { setState('저장 불가', true); return; }
+    metaChain = metaChain.then(() => db.doc(path('meta/main')).set({ title: data.title }))
+      .then(() => { if (dirty.size === 0) setState('저장됨'); })
+      .catch(onWriteError);
+  }, 600);
+}
+
+/* ---------- 조작 ---------- */
+function goDay(i) {
+  current = i;
+  try { history.replaceState(null, '', '#day' + (i + 1)); } catch (e) {}
+  document.querySelectorAll('.tab').forEach((t, j) => t.classList.toggle('active', j === i));
+  document.querySelectorAll('.day').forEach((s, j) => s.classList.toggle('active', j === i));
+}
+function setView(di, p) { view[data.days[di].id] = p; rememberView(); renderDay(di); }
+function choosePlan(di, p) {
+  data.days[di].chosen = p;
+  queueSave(di); renderDay(di);
+  toast(`${di + 1}일차는 ${p}안으로 확정했어요`);
+}
+function copyPlan(di, from, to) {
+  const d = data.days[di];
+  d.plans[to] = JSON.parse(JSON.stringify(d.plans[from]));
+  queueSave(di); renderDay(di);
+  toast(`${from}안 내용을 ${to}안으로 복사했어요`);
+}
+function addRow(di, p, at) {
+  const rows = data.days[di].plans[p].rows;
+  const idx = at === undefined ? rows.length : at;
+  rows.splice(idx, 0, blank(''));
+  queueSave(di); renderDay(di);
+  const el = document.querySelector(`.cell[data-d="${di}"][data-p="${p}"][data-r="${idx}"][data-k="time"]`);
+  if (el) el.focus();
+}
+function delRow(di, p, ri) {
+  const rows = data.days[di].plans[p].rows;
+  const removed = rows.splice(ri, 1)[0];
+  queueSave(di); renderDay(di);
+  if (removed.place || removed.how || removed.plan || removed.cost) {
+    toast('행을 삭제했어요', { label: '되돌리기', fn: () => { data.days[di].plans[p].rows.splice(ri, 0, removed); queueSave(di); renderDay(di); } });
+  }
+}
+function moveRow(di, p, ri, dir) {
+  const rows = data.days[di].plans[p].rows, j = ri + dir;
+  if (j < 0 || j >= rows.length) return;
+  [rows[ri], rows[j]] = [rows[j], rows[ri]];
+  queueSave(di); renderDay(di);
+}
+async function createDays(withSeed) {
+  if (!db) return;
+  setState('만드는 중…');
+  try {
+    const batch = db.batch();
+    for (let i = 0; i < 4; i++) {
+      const s = SEED[i];
+      const A = withSeed ? { rows: s.rows, memo: s.memo } : blankPlan();
+      batch.set(db.doc(path('days/d' + i)), { idx: i, label: withSeed ? s.label : `${i + 1}일차`, chosen: 'A', plans: { A, B: blankPlan() } });
+    }
+    batch.set(db.doc(path('meta/main')), { title: DEFAULT_TITLE });
+    await batch.commit();
+    setState('저장됨');
+  } catch (e) { onWriteError(e); }
+}
+
+let toastTimer;
+function toast(msg, action) {
+  const t = document.getElementById('toast');
+  t.innerHTML = esc(msg) + (action ? ` <button type="button">${esc(action.label)}</button>` : '');
+  if (action) t.querySelector('button').onclick = () => { action.fn(); t.classList.remove('show'); };
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), action ? 6000 : 1800);
+}
+
+/* 편집 반영 (재렌더 없이 데이터만 갱신) */
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (!el.isContentEditable) return;
+  if (el.id === 'title') { data.title = el.textContent.trim(); document.title = data.title || DEFAULT_TITLE; queueMeta(); return; }
+  const ds = el.dataset;
+  if (ds.label !== undefined) {
+    const di = +ds.label; data.days[di].label = el.textContent.trim();
+    const tab = document.querySelectorAll('.tab')[di];
+    if (tab) tab.firstChild.textContent = data.days[di].label.split('·')[0].trim() || (di + 1) + '일차';
+    renderExpenses(); queueSave(di);
+  } else if (ds.memo !== undefined) {
+    const di = +ds.memo; data.days[di].plans[ds.p].memo = el.innerText; queueSave(di);
+  } else if (ds.k) {
+    const di = +ds.d, row = data.days[di].plans[ds.p].rows[+ds.r];
+    row[ds.k] = el.innerText.replace(/\n$/, '');
+    if (ds.k === 'cost') renderExpenses();
+    el.closest('tr').classList.toggle('empty', !(row.place || row.how || row.plan || row.cost));
+    queueSave(di);
+  }
+});
+/* Enter: 줄바꿈 대신 다음 칸으로 (Shift+Enter 는 줄바꿈) */
+document.addEventListener('keydown', e => {
+  const el = e.target;
+  if (e.key === 'Enter' && !e.shiftKey && el.isContentEditable && el.dataset.k) {
+    e.preventDefault();
+    const cells = [...document.querySelectorAll('.day.active .cell[data-k]')];
+    const i = cells.indexOf(el);
+    if (cells[i + 5]) cells[i + 5].focus(); else addRow(+el.dataset.d, el.dataset.p);
+  }
+});
+/* 저장이 끝나기 전에 창을 닫으려 하면 알려주기 */
+window.addEventListener('beforeunload', e => {
+  if (dirty.size > 0 || metaTimer) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ---------- 시작 ---------- */
+function connect() {
+  if (!firebaseConfig.apiKey || !firebaseConfig.projectId) { status = 'noconfig'; render(); return; }
+  if (typeof firebase === 'undefined') { status = 'offline'; render(); return; }
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  } catch (e) { status = 'offline'; render(); return; }
+
+  let saved = '';
+  try { saved = localStorage.getItem(CODE_KEY) || ''; } catch (e) {}
+  if (saved) enter(saved); else { status = 'nocode'; render(); }
+}
+
+/* 암호로 들어가기: trips/<암호>/ 아래를 구독. 규칙이 거부하면 암호가 틀린 것 */
+function enter(raw) {
+  const c = String(raw || '').trim();
+  if (!c || c.includes('/') || c === '.' || c === '..' || /^__.*__$/.test(c) || c.length > 64) {
+    status = 'badcode'; render(); return;
+  }
+  unsubs.forEach(u => u()); unsubs = [];
+  code = c;
+  data = { title: DEFAULT_TITLE, days: [] };
+  dirty.clear(); canWrite = null;
+  status = 'loading'; render();
+
+  unsubs.push(db.doc(path('meta/main')).onSnapshot(snap => {
+    if (snap.exists && !metaTimer) { const t = snap.data().title; if (typeof t === 'string' && t !== data.title) { data.title = t; render(); } }
+  }, () => {}));
+
+  unsubs.push(db.collection(path('days')).orderBy('idx').onSnapshot(snap => {
+    if (status !== 'ready') { try { localStorage.setItem(CODE_KEY, code); } catch (e) {} }
+    const byId = Object.fromEntries(data.days.map(x => [x.id, x]));
+    const merged = snap.docs.map(s => dirty.has(s.id) && byId[s.id] ? byId[s.id] : normalize({ id: s.id, ...s.data() }));
+    const changed = status !== 'ready' || JSON.stringify(merged) !== JSON.stringify(data.days);
+    data.days = merged; status = 'ready';
+    if (changed) render();
+  }, e => {
+    unsubs.forEach(u => u()); unsubs = [];
+    if (e && e.code === 'permission-denied') {
+      try { localStorage.removeItem(CODE_KEY); } catch (err) {}
+      code = ''; status = 'badcode';
+    } else status = 'offline';
+    render();
+  }));
+}
+
+/* 암호 지우고 입력 화면으로 */
+function leave() {
+  unsubs.forEach(u => u()); unsubs = [];
+  try { localStorage.removeItem(CODE_KEY); } catch (e) {}
+  code = ''; data = { title: DEFAULT_TITLE, days: [] }; dirty.clear();
+  status = 'nocode'; render();
+}
+
+const m = /^#day(\d+)$/.exec(location.hash);
+if (m) current = Math.max(0, +m[1] - 1);
+render();
+connect();
+</script>
+</body>
+</html>
